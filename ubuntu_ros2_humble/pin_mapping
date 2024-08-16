@@ -1,0 +1,62 @@
+import subprocess
+
+def select_programmer(programmers):
+    # This line diisplays a list of available programmers so the user can select one
+    for i, programmer in enumerate(programmers):
+        print(f"{i+1}. {programmer['desc']} ({programmer['id']})")
+    
+    choice = int(input("Select programmer: ")) - 1
+    return programmers[choice]
+
+def program_device(programmer, port, firmware_file):
+    cmd = [
+        "avrdude",
+        "-c", programmer['id'],
+        "-P", port,
+        "-b", str(programmer.get('baudrate', 115200)),
+        "-U", f"flash:w:{firmware_file}:i"
+    ]
+    subprocess.run(cmd)
+
+def main():
+    # Programmer data from avrdude.conf
+    programmers = [
+        # I used 2 programmers
+        {"id": "arduino", "desc": "Arduino", "connection_type": "serial"},
+        {"id": "usbasp", "desc": "USBasp", "connection_type": "usb"},
+        # more programmers can be added 
+    ]
+    
+    programmer = select_programmer(programmers)
+    
+    port = input("Enter port (e.g., /dev/ttyUSB0 or COM3): ")
+    firmware_file = input("Enter path to firmware file: ")
+    
+    program_device(programmer, port, firmware_file)
+
+
+HUT TX (Transmit) → Jetson RX (Receive)
+HUT RX (Receive) → Jetson TX (Transmit)
+HUT GND (Ground) → Jetson GND (Ground)
+Optional: HUT VCC (Power) → Jetson VCC (Power)
+
+# test the pin mapping for a serial communication
+
+import serial
+
+# Open the serial port (replace '/dev/ttyTHS1' with the correct serial port for your Jetson)
+ser = serial.Serial('/dev/ttyTHS1', baudrate=9600, timeout=1)
+
+# Send data to HUT
+ser.write(b'Hello HUT!\n')
+
+# Read data from HUT
+response = ser.readline().decode('utf-8')
+print(f"Received: {response}")
+
+# Close the serial port
+ser.close()
+
+
+if __name__ == "__main__":
+    main()
